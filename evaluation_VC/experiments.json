@@ -1,6 +1,9 @@
 {
-
     "ROOT_OUT" : "/proj/snic2022-6-31/nobackup/dardel_move/kris/strobealign_eval",
     "ROOT_IN" : "/home/kris/source/alignment_evaluation",
-    "HG38" : "/proj/snic2022-6-31/nobackup/dardel_move/data/HG38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa"
+    "DATA" : "/cfs/klemming/projects/supr/snic2022-6-31/data/HG004",
+    "HG38" : "/cfs/klemming/projects/supr/snic2022-6-31/data/HG38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa",
+    "COMMITS" : [{"key": "0.14.0", "hash": "b3b8f485119ddb8c18d071f45819200cacbbf168", "name": "strobealign 0.14.0"}, 
+                 {"key": "mcs", "hash": "022a7219880eb842449da8a65874a547ac58f0d1", "name": "strobealign MCS"}, 
+                 {"key": "mcsr", "hash": "c0695b0426408acfe18d1252324a88ed63d83008", "name": "strobealign MCSR"}]
 }

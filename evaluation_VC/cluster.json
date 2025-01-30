@@ -8,7 +8,7 @@
         "Nodes" : 1,
         "runtime" : "01:00:00",
         "jobname" : "pipeline",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -20,7 +20,7 @@
         "Nodes" : 1,
         "runtime" : "07:00:00",
         "jobname" : "simulate",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -33,7 +33,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "00:30:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -46,7 +46,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "07:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -58,7 +58,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "03:30:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -70,7 +70,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "03:30:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -82,7 +82,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "2-00:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -94,177 +94,19 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "2-00:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
-    "strobealign_v071": 
+    "strobealign": 
     {
         "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.7.1",
+        "jobname" : "strobealign_vc",
         "cpus-per-task" : "20",
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_v0120_opt": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.12.0opt",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_v0140": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.14.0",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_mcs_022a721": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_mcs",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-
-    "strobealign_wfa2": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_wfa",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_b5305a0": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "b5305a0",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_v080_cmake": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.8.0",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_ksw2_cmake": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_ksw2",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_multicontext": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_multi",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_116d124": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_116d124",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_v090_cmake": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.8.0",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "strobealign_v0120_cmake": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "s_v0.12.0",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "04:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-    "accelalign_index" : 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "aa_index",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "02:00:00",
-        "mail" : "ksahlin@kth.se",
-        "mail_type" : "FAIL"
-    },
-
-
-    "accelalign_align": 
-    {
-        "account" : "naiss2024-5-55",
-        "jobname" : "aa_aln",
-        "cpus-per-task" : "20",
-        "Nodes" : 1,
-        "C" : "mem128GB",
-        "runtime" : "20:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -276,7 +118,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "03:30:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -288,7 +130,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "2-00:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
     
@@ -300,7 +142,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "07:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -313,7 +155,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "2-00:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -325,7 +167,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "01:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -338,7 +180,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "07:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -350,7 +192,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "15:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -362,7 +204,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "10:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -375,7 +217,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "5:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -387,7 +229,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "07:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -399,7 +241,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "10:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     },
 
@@ -411,7 +253,7 @@
         "Nodes" : 1,
         "C" : "mem128GB",
         "runtime" : "10:00:00",
-        "mail" : "ksahlin@kth.se",
+        "mail" : "ivan.tolstoganov@math.su.se",
         "mail_type" : "FAIL"
     }
 

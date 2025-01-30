@@ -7,6 +7,8 @@
 shell.prefix("set -o pipefail; ")
 configfile: "experiments.json"
 
+COMMIT_TO_HASH_MAP = {c["key"]: c["hash"] for c in config["COMMITS"]}
+
 # wildcard_constraints:
 #     nr_reads="[\d]+",
 
@@ -34,8 +36,8 @@ def mkdir_p(path):
 
 rule all:
    input:  config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result",
-           config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result"
-           # config["ROOT_OUT"] + "/evaluation_SV/overlap.result"
+           config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result",
+           config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
 
 
 rule mason_simulate_variants:
@@ -66,9 +68,9 @@ rule mason_simulate_variants:
 rule mason_simulate_reads:
     input:  ref = config["HG38"],
              sim_vcf = rules.mason_simulate_variants.output.sim_vcf
-    output: sim_fq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset,SIM\d+}/reads_R1.fastq",
-            sim_fq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset,SIM\d+}/reads_R2.fastq",
-            sim_sam =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset,SIM\d+}.sam"
+    output: sim_fq_L =  config["DATA"] + "/{dataset,SIM\d+}/reads_R1.fastq",
+            sim_fq_R =  config["DATA"] + "/{dataset,SIM\d+}/reads_R2.fastq",
+            sim_sam =  config["DATA"] + "/{dataset,SIM\d+}.sam"
     # wildcard_constraints:
     #    dataset="SIM*"
     run:
@@ -88,8 +90,8 @@ rule minimap2_index:
         shell("/usr/bin/time -v  minimap2 -t 1 -k21 -w11 -d {output.mm_index} {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule minimap2_align:
-    input: fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq.gz",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq.gz", 
+    input: fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
             # ref = config["HG38"],
             index = rules.minimap2_index.output.mm_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/minimap2/{dataset}/aligning_time_and_mem.txt",
@@ -114,8 +116,8 @@ rule bwa_mem_index:
         shell("/usr/bin/time -v  bwa index {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule bwa_mem_align:
-    input: fastq_L = "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq.gz",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq.gz", 
+    input: fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
             index = config["HG38"] + ".bwt",
             ref = config["HG38"]
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem/{dataset}/aligning_time_and_mem.txt",
@@ -141,8 +143,8 @@ rule bwa_mem2_index:
         shell("/usr/bin/time -v  bwa-mem2 index -p {idxbase} {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule bwa_mem2_align:
-    input: fastq_L = "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
+    input: fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
             index = config["HG38"] + ".bwa_mem2.ann",
             ref = config["HG38"]
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem2/{dataset}/aligning_time_and_mem.txt",
@@ -160,182 +162,215 @@ rule bwa_mem2_align:
         shell("mv {tmp_time_and_mem} {output.time_and_mem}")
         shell("mv {tmp_sam} {output.sam}")
 
-rule strobealign_v071:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v071/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v071/{dataset}.sam"
-    run: 
-        # shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
-        # shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
-        # shell("echo Copied reads to: $SLURM_JOB_ID")
-        # tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
-        # tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
-        # tmp_fq_L = "/scratch/$SLURM_JOB_ID/reads_L.fq"
-        # tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
-        # shell("ulimit -c unlimited") # for bugfix
-        # tmp_ref = "/proj/snic2022-6-31/nobackup/data/HG38/GCA_000001405.15_GRCh38_no_alt_analysis_set_chr1and2.fa"
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-v0.7.1 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-v0.7.1 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+# rule strobealign_v071:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v071/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v071/{dataset}.sam"
+#     run: 
+#         # shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
+#         # shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
+#         # shell("echo Copied reads to: $SLURM_JOB_ID")
+#         # tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
+#         # tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
+#         # tmp_fq_L = "/scratch/$SLURM_JOB_ID/reads_L.fq"
+#         # tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
+#         # shell("ulimit -c unlimited") # for bugfix
+#         # tmp_ref = "/proj/snic2022-6-31/nobackup/data/HG38/GCA_000001405.15_GRCh38_no_alt_analysis_set_chr1and2.fa"
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-v0.7.1 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-v0.7.1 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
         
-        # core_folder = config["ROOT_OUT"] + "/time_and_mem_PE/strobealign/"  # for bugfix
-        # shell("mv core.* {core_folder}")  # for bugfix
-        # shell("mv {tmp_time_and_mem} {output.time_and_mem}")
-        # shell("mv {tmp_sam} {output.sam}")
+#         # core_folder = config["ROOT_OUT"] + "/time_and_mem_PE/strobealign/"  # for bugfix
+#         # shell("mv core.* {core_folder}")  # for bugfix
+#         # shell("mv {tmp_time_and_mem} {output.time_and_mem}")
+#         # shell("mv {tmp_sam} {output.sam}")
 
 
-rule strobealign_wfa2:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_wfa2/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_wfa2/{dataset}.sam"
-    run: 
+# rule strobealign_wfa2:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_wfa2/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_wfa2/{dataset}.sam"
+#     run: 
 
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-8311650 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-8311650 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-        
-
-rule strobealign_b5305a0:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_b5305a0/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_b5305a0/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-b5305a0 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-b5305a0 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-
-rule strobealign_v080_cmake:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v080_cmake/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v080_cmake/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-v0.8.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-v0.8.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-8311650 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-8311650 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
         
 
-rule strobealign_v090_cmake:
+# rule strobealign_b5305a0:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_b5305a0/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_b5305a0/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-b5305a0 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-b5305a0 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+
+# rule strobealign_v080_cmake:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v080_cmake/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v080_cmake/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-v0.8.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-v0.8.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+        
+
+# rule strobealign_v090_cmake:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v090_cmake/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v090_cmake/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-v0.9.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-v0.9.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+
+# rule strobealign_v0120_cmake:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0120_cmake/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0120_cmake/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-v0.12.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-v0.12.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+# rule strobealign_ksw2_cmake:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_ksw2_cmake/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_ksw2_cmake/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-ksw2 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-ksw2 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+# rule strobealign_116d124:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_116d124/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_116d124/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-116d124 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-116d124 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+# rule strobealign_v0120_opt:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0120_opt/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0120_opt/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-v0.12.0-opt -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-v0.12.0-opt -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+
+# rule strobealign_v0140:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0140/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0140/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v   ~/.conda/envs/strobealign-v0.14.0/bin/strobealign -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+# #             shell("/usr/bin/time -v   ~/.conda/envs/strobealign-v0.14.0/bin/strobealign -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+
+
+# rule strobealign_mcs_022a721:
+#     input:  ref = config["HG38"],
+#             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+#             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
+#             # index = rules.minimap2_index.output.mm_index
+#     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_mcs_022a721/{dataset}/aligning_time_and_mem.txt",
+#             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_mcs_022a721/{dataset}.sam"
+#     run: 
+
+#         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
+#             shell("/usr/bin/time -v  strobealign-mcs -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+#         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
+#             shell("/usr/bin/time -v  strobealign-mcs -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+
+
+rule compile_strobealign:
+    output: config["ROOT_OUT"] + "/bin/strobealign-{key}"
+    params:
+        commit=lambda wildcards: COMMIT_TO_HASH_MAP[wildcards.key]
+    threads: 4
+    shell:
+        """
+        wget https://github.com/ksahlin/strobealign/archive/{params.commit}.zip
+        unzip {params.commit}.zip
+        rm {params.commit}.zip
+        cd strobealign-{params.commit}
+        cmake -B build -DCMAKE_C_FLAGS="-march=native" -DCMAKE_CXX_FLAGS="-march=native"
+        make -j {threads} -C build strobealign
+        mv build/strobealign ../{output}
+        cd ..
+        rm -rf strobealign-{params.commit}
+        """
+
+
+rule strobealign:
     input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
+            fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz",
+            binary = config["ROOT_OUT"] + "/bin/strobealign-{version}" 
             # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v090_cmake/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v090_cmake/{dataset}.sam"
+    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_{version}/{dataset}/aligning_time_and_mem.txt",
+            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_{version}/{dataset}.sam"
     run: 
 
         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-v0.9.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+            shell("/usr/bin/time -v  {input.binary} -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-v0.9.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-
-rule strobealign_v0120_cmake:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0120_cmake/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0120_cmake/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-v0.12.0-cmake -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-v0.12.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-rule strobealign_ksw2_cmake:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_ksw2_cmake/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_ksw2_cmake/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-ksw2 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-ksw2 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-rule strobealign_116d124:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_116d124/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_116d124/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-116d124 -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-116d124 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-rule strobealign_v0120_opt:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0120_opt/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0120_opt/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-v0.12.0-opt -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-v0.12.0-opt -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-
-
-rule strobealign_v0140:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq.gz",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq.gz", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_v0140/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_v0140/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v   ~/.conda/envs/strobealign-v0.14.0/bin/strobealign -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v   ~/.conda/envs/strobealign-v0.14.0/bin/strobealign -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
-
-
-rule strobealign_mcs_022a721:
-    input:  ref = config["HG38"],
-            fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq.gz",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq.gz", 
-            # index = rules.minimap2_index.output.mm_index
-    output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_mcs_022a721/{dataset}/aligning_time_and_mem.txt",
-            sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_mcs_022a721/{dataset}.sam"
-    run: 
-
-        if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  strobealign-mcs -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
-        elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  strobealign-mcs -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
-
+            shell("/usr/bin/time -v  {input.binary} -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 
 rule accelalign_index:
@@ -346,8 +381,8 @@ rule accelalign_index:
         shell("/usr/bin/time -v  accindex -t 16 {input.ref} 2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule accelalign_align:
-    input:  fastq_L =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
+    input:  fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
             index = rules.accelalign_index.output.accelalign_index
             # index = rules.minimap2_index.output.mm_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/accelalign/{dataset}/aligning_time_and_mem.txt",
@@ -374,8 +409,8 @@ rule bowtie2_index:
         shell("/usr/bin/time -v  bowtie2-build --threads 1 {input.ref} {index}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule bowtie2_align:
-    input:  fastq_L =   "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
+    input:  fastq_L =   config["DATA"] + "/{dataset}/reads_R1.fastq",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
             bt2_index =  config["HG38"] + "-bt2.1.bt2",
             # index = rules.minimap2_index.output.mm_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bowtie2/{dataset}/aligning_time_and_mem.txt",
@@ -404,8 +439,8 @@ rule snap_index:
         shell("/usr/bin/time -v  snap-aligner index {input.ref}  {output.snp_index} 2>&1 | tee {output.time_and_mem}") 
 
 rule snap_align:
-    input: fastq_L =   "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq", 
+    input: fastq_L =   config["DATA"] + "/{dataset}/reads_R1.fastq",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
             index = rules.snap_index.output.snp_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/snap/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/snap/{dataset}.sam"
@@ -443,8 +478,8 @@ rule urmap_index:
         shell("/usr/bin/time -v  urmap -make_ufi {input.ref}  -output {output.ufi_index} 2>&1 | tee {output.time_and_mem}") 
 
 rule urmap_align:
-    input: fastq_L =   "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R1.fastq",
-            fastq_R =  "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/{dataset}/reads_R2.fastq",
+    input: fastq_L =   config["DATA"] + "/{dataset}/reads_R1.fastq",
+            fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq",
             index = rules.urmap_index.output.ufi_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/urmap/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/urmap/{dataset}.sam"
@@ -537,7 +572,7 @@ rule bcftools_intersect_sim:
 
 
 rule bcftools_split_true:
-    input: variants_vcf = "/proj/snic2022-6-31/nobackup/dardel_move/data/HG004/HG004_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
+    input: variants_vcf = config["DATA"] + "/HG004_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
     output: vcf_SNV_true = config["ROOT_OUT"] + "/vcf/HG004.true.variants.SNV.vcf.gz",
             vcf_INDEL_true = config["ROOT_OUT"] + "/vcf/HG004.true.variants.INDEL.vcf.gz"
     # wildcard_constraints:
@@ -605,7 +640,7 @@ rule get_stats:
 # tool=["minimap2", "bwa_mem", "strobealign_v071", 'accelalign', "bowtie2", "snap", "urmap", "bwa_mem2", "strobealign_v080_cmake", "strobealign_v090_cmake", "strobealign_v0120_cmake", "strobealign_wfa2", "strobealign_b5305a0", "strobealign_ksw2_cmake", "strobealign_mcs_022a721", "strobealign_116d124"])
 
 rule summary_variant_call_stats:
-    input: call_stats_files =  expand(config["ROOT_OUT"] + "/results/{tool}/{dataset}/results.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_mcs_022a721", "strobealign_v0140"])
+    input: call_stats_files =  expand(config["ROOT_OUT"] + "/results/{tool}/{dataset}/results.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_mcs", "strobealign_0.14.0"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result"
     run:
         # summary_file = open(out, "w")
@@ -620,40 +655,38 @@ rule summary_variant_call_stats:
 
 
 
-# rule overlap:
-#     input: bwa =  config["ROOT_OUT"] + "/alignments_PE/bwa_mem/{dataset}.sam",
-#            bowtie2 =  config["ROOT_OUT"] + "/alignments_PE/bowtie2/{dataset}.sam",
-#            snap =  config["ROOT_OUT"] + "/alignments_PE/snap/{dataset}.sam",
-#            aln =  config["ROOT_OUT"] + "/alignments_PE/{tool}/{dataset}.sam"
-#     output: out = config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result"
-#     run:
-#         if wildcards.tool == "minimap2_map" or wildcards.tool == "strobealign_map": 
-#             shell("/usr/bin/time -v  python get_overlap.py --sam1 {input.bwa} --sam2 {input.bowtie2} --paf  {input.aln} --tool {wildcards.tool} > {output.out} ")
-#             shell("/usr/bin/time -v  python get_overlap.py --sam1 {input.bwa} --sam2 {input.snap} --paf  {input.aln} --tool {wildcards.tool} >> {output.out} ")
+rule align_stats:
+    input: aln =  config["ROOT_OUT"] + "/alignments_PE/{tool}/{dataset}.sam"
+    output: out = config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result"
+    run:
+        script_dir = config["ROOT_IN"] + "/evaluation_VC"
+        shell("/usr/bin/time -v python {script_dir}/get_percent_aligned.py --tool {wildcards.tool} > {output.out}")
+        # if wildcards.tool == "minimap2_map" or wildcards.tool == "strobealign_map": 
+        #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.tool} --paf  {input.aln} --tool {wildcards.tool} > {output.out} ")
+        #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.snap} --paf  {input.aln} --tool {wildcards.tool} >> {output.out} ")
 
-#         else:
-#             shell("/usr/bin/time -v  python get_overlap.py --sam1 {input.bwa} --sam2 {input.bowtie2} --sam3  {input.aln} --tool {wildcards.tool} > {output.out} ")
-#             shell("/usr/bin/time -v  python get_overlap.py --sam1 {input.bwa} --sam2 {input.snap} --sam3  {input.aln} --tool {wildcards.tool} >> {output.out} ")
+        # else:
+        #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.bowtie2} --sam3  {input.aln} --tool {wildcards.tool} > {output.out} ")
+        #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.snap} --sam3  {input.aln} --tool {wildcards.tool} >> {output.out} ")
 
  
 
-# rule summary_alignment_stats:
-#     input: overlap_files = expand(config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result",  dataset = ["BIO150", "BIO250"], tool=["minimap2", "bwa_mem", "strobealign",'accelalign', "bowtie2", "strobealign_map", "minimap2_map", "accelalign_map", "snap", "urmap"])
-#     output: out = config["ROOT_OUT"] + "/evaluation_SV/overlap.result"
-#     run:
-#         shell('echo "tool,dataset,read_length,aligned,overlap,overaligned" > {output.out}')
-#         for f in input.overlap_files:
-#             string = f.split("/")
-#             tool = string[-2]
-#             dataset = string[-1].split(".")[0]
-#             read_length = 250
-#             shell("echo -n {tool},{dataset},{read_length}, >> {output.out} ")
-#             shell("cat {f} >> {output.out}")
+rule summary_alignment_stats:
+    input: overlap_files = expand(config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result",  dataset = ["SIM150", "SIM250", "BIO150", "BIO250"], tool=["minimap2", "bwa_mem", "strobealign_0.14.0", "strobealign_mcs"])
+    output: out = config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
+    run:
+        shell('echo "tool,dataset,read_length,aligned" > {output.out}')
+        for f in input.overlap_files:
+            string = f.split("/")
+            tool = string[-2]
+            dataset = string[-1].split(".")[0]
+            shell("echo -n {tool},{dataset}, >> {output.out} ")
+            shell("cat {f} >> {output.out}")
             
 
 
 rule summary_time_and_mem:
-    input: time_and_mem_files =  expand(config["ROOT_OUT"] + "/time_and_mem_PE/{tool}/{dataset}/aligning_time_and_mem.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_mcs_022a721", "strobealign_v0140"])
+    input: time_and_mem_files =  expand(config["ROOT_OUT"] + "/time_and_mem_PE/{tool}/{dataset}/aligning_time_and_mem.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_0.14.0", "strobealign_mcs"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result"
     run:
         # summary_file = open(out, "w")
@@ -671,7 +704,7 @@ rule summary_time_and_mem:
                 read_length = 250
             elif dataset == "SIM150":
                 read_length = 150
-            shell("/usr/bin/time -v  python summarize_time_and_memory.py {tool} {dataset} {read_length} {f}  >> {output.out} ")
+            shell("/usr/bin/time -v  python {script_dir}/summarize_time_and_memory.py {tool} {dataset} {read_length} {f}  >> {output.out} ")
 
 
 
