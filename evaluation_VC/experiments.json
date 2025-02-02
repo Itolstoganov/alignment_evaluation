@@ -1,6 +1,6 @@
 {
-    "ROOT_OUT" : "/proj/snic2022-6-31/nobackup/dardel_move/kris/strobealign_eval",
-    "ROOT_IN" : "/home/kris/source/alignment_evaluation",
+    "ROOT_OUT" : "/cfs/klemming/projects/supr/snic2022-6-31/ivan/multi-context/vc_benchmark/out",
+    "ROOT_IN" : "/cfs/klemming/projects/supr/snic2022-6-31/ivan/multi-context/vc_benchmark/alignment_evaluation",
     "DATA" : "/cfs/klemming/projects/supr/snic2022-6-31/data/HG004",
     "HG38" : "/cfs/klemming/projects/supr/snic2022-6-31/data/HG38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa",
     "COMMITS" : [{"key": "0.14.0", "hash": "b3b8f485119ddb8c18d071f45819200cacbbf168", "name": "strobealign 0.14.0"}, 

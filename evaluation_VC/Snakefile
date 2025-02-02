@@ -8,6 +8,7 @@ shell.prefix("set -o pipefail; ")
 configfile: "experiments.json"
 
 COMMIT_TO_HASH_MAP = {c["key"]: c["hash"] for c in config["COMMITS"]}
+SCRATCH = "/cfs/klemming/scratch/i/itolstog"
 
 # wildcard_constraints:
 #     nr_reads="[\d]+",
@@ -97,16 +98,17 @@ rule minimap2_align:
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/minimap2/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/minimap2/{dataset}.sam"
     run:
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
-        shell("echo Copied reads to: $SLURM_JOB_ID")
-        tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
-        tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
-        tmp_fq_L = "/scratch/$SLURM_JOB_ID/reads_L.fq"
-        tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
-        shell("/usr/bin/time -v  minimap2 -o {tmp_sam} -t 16 -ax sr {input.index} {tmp_fq_L} {tmp_fq_R} 2>&1 | tee {tmp_time_and_mem}  ")
-        shell("mv {tmp_time_and_mem} {output.time_and_mem}")
-        shell("mv {tmp_sam} {output.sam}")
+        #shell("mkdir -p $SCRATCH/$SLURM_JOB_ID")
+        #shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
+        #shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
+        #shell("echo Copied reads to: $SLURM_JOB_ID")
+        #tmp_time_and_mem = "/tmp/$SLURM_JOB_ID/aligning_time_and_mem.txt"
+        #tmp_sam = "$SCRATCH/$SLURM_JOB_ID/aligned.sam"
+        #tmp_fq_L = "$SCRATCH/$SLURM_JOB_ID/reads_L.fq"
+        #tmp_fq_R = "$SCRATCH/$SLURM_JOB_ID/reads_R.fq"
+        shell("/usr/bin/time -v  minimap2 -o {output.sam} -t 32 -ax sr {input.index} {input.fastq_L} {input.fastq_R} 2>&1 | tee {output.time_and_mem}  ")
+        #shell("mv {tmp_time_and_mem} {output.time_and_mem}")
+        #shell("mv {tmp_sam} {output.sam}")
 
 rule bwa_mem_index:
     input: ref = config["HG38"]
@@ -123,16 +125,17 @@ rule bwa_mem_align:
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/bwa_mem/{dataset}.sam"
     run:
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
-        shell("echo Copied reads to: $SLURM_JOB_ID")
-        tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
-        tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
-        tmp_fq_L = "/scratch/$SLURM_JOB_ID/reads_L.fq"
-        tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
-        shell("/usr/bin/time -v  bwa mem -o {tmp_sam} -t 16 {input.ref} {tmp_fq_L} {tmp_fq_R} 2>&1 | tee {tmp_time_and_mem} ")
-        shell("mv {tmp_time_and_mem} {output.time_and_mem}")
-        shell("mv {tmp_sam} {output.sam}")
+        #shell("mkdir -p $SCRATCH/$SLURM_JOB_ID")
+        #shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
+        #shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
+        #shell("echo Copied reads to: $SLURM_JOB_ID")
+        #tmp_time_and_mem = "/tmp/$SLURM_JOB_ID/aligning_time_and_mem.txt"
+        #tmp_sam = "$SCRATCH/$SLURM_JOB_ID/aligned.sam"
+        #tmp_fq_L = "$SCRATCH/$SLURM_JOB_ID/reads_L.fq"
+        #tmp_fq_R = "$SCRATCH/$SLURM_JOB_ID/reads_R.fq"
+        shell("/usr/bin/time -v  bwa mem -o {output.sam} -t 32 {input.ref} {input.fastq_L} {input.fastq_R} 2>&1 | tee {output.time_and_mem} ")
+        #shell("mv {tmp_time_and_mem} {output.time_and_mem}")
+        #shell("mv {tmp_sam} {output.sam}")
 
 rule bwa_mem2_index:
     input: ref = config["HG38"]
@@ -150,15 +153,16 @@ rule bwa_mem2_align:
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem2/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/bwa_mem2/{dataset}.sam"
     run:
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
-        shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
+        shell("mkdir -p $SCRATCH/$SLURM_JOB_ID")
+        shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
+        shell("cp {0} $SCRATCH/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
         shell("echo Copied reads to: $SLURM_JOB_ID")
-        tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
-        tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
-        tmp_fq_L = "/scratch/$SLURM_JOB_ID/reads_L.fq"
-        tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
+        tmp_time_and_mem = "$SCRATCH/$SLURM_JOB_ID/aligning_time_and_mem.txt"
+        tmp_sam = "$SCRATCH/$SLURM_JOB_ID/aligned.sam"
+        tmp_fq_L = "$SCRATCH/$SLURM_JOB_ID/reads_L.fq"
+        tmp_fq_R = "$SCRATCH/$SLURM_JOB_ID/reads_R.fq"
         idxbase = config["HG38"] + ".bwa_mem2"
-        shell("/usr/bin/time -v  bwa-mem2 mem -o {tmp_sam} -t 16 {idxbase} {tmp_fq_L} {tmp_fq_R} 2>&1 | tee {tmp_time_and_mem} ")
+        shell("/usr/bin/time -v  bwa-mem2 mem -o {tmp_sam} -t 32 {idxbase} {tmp_fq_L} {tmp_fq_R} 2>&1 | tee {tmp_time_and_mem} ")
         shell("mv {tmp_time_and_mem} {output.time_and_mem}")
         shell("mv {tmp_sam} {output.sam}")
 
@@ -351,7 +355,7 @@ rule compile_strobealign:
         cd strobealign-{params.commit}
         cmake -B build -DCMAKE_C_FLAGS="-march=native" -DCMAKE_CXX_FLAGS="-march=native"
         make -j {threads} -C build strobealign
-        mv build/strobealign ../{output}
+        mv build/strobealign {output}
         cd ..
         rm -rf strobealign-{params.commit}
         """
@@ -368,9 +372,9 @@ rule strobealign:
     run: 
 
         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  {input.binary} -t 16 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+            shell("/usr/bin/time -v  {input.binary} -t 32 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  {input.binary} -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+            shell("/usr/bin/time -v  {input.binary} -t 32 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 
 rule accelalign_index:
@@ -660,7 +664,7 @@ rule align_stats:
     output: out = config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result"
     run:
         script_dir = config["ROOT_IN"] + "/evaluation_VC"
-        shell("/usr/bin/time -v python {script_dir}/get_percent_aligned.py --tool {wildcards.tool} > {output.out}")
+        shell("/usr/bin/time -v python {script_dir}/get_percent_aligned.py --sam {input.aln} --tool {wildcards.tool} > {output.out}")
         # if wildcards.tool == "minimap2_map" or wildcards.tool == "strobealign_map": 
         #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.tool} --paf  {input.aln} --tool {wildcards.tool} > {output.out} ")
         #     shell("/usr/bin/time -v  python {script_dir}/get_overlap.py --sam1 {input.bwa} --sam2 {input.snap} --paf  {input.aln} --tool {wildcards.tool} >> {output.out} ")
@@ -690,6 +694,7 @@ rule summary_time_and_mem:
     output: out = config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result"
     run:
         # summary_file = open(out, "w")
+        script_dir = config["ROOT_IN"] + "/evaluation_VC"	
         shell('echo "tool,dataset,read_length,time,memory" > {output.out}')
 
         for f in input.time_and_mem_files:
