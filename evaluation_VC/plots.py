@@ -177,11 +177,41 @@ def plot_runtime(input_csv, outfolder, palette, tools):
     plt.savefig(os.path.join(outfolder, "runtime.pdf"))
     plt.clf()
 
+def plot_percent_aligned(input_csv, outfolder, palette, tools):
+    reads_assumed = 800000000
+    bio150_reads = 530756485
+    bio250_reads = 212075132
+    sim150_reads = 600500000
+    sim250_reads = 360500000
+
+    sns.set(rc={'figure.figsize':(12,4)})
+    matplotlib.rcParams.update({'font.size': 14})
+    sns.set(font_scale=1.4)
+    sns.set_style("whitegrid")
+    # pyplot.figure(figsize=(4,16))
+    indata = pd.read_csv(input_csv)
+    actual_reads = {"SIM150": sim150_reads, "SIM250": sim250_reads, "BIO150": bio150_reads, "BIO250": bio250_reads}
+    print(indata)
+
+    indata['aligned_fixed'] = indata.apply(lambda row: row["aligned"] * reads_assumed / actual_reads[row["dataset"]], axis=1)
+
+    # f, axes = plt.subplots(1, 1)
+    ax1 = sns.lineplot(data=indata, x="dataset", y="aligned_fixed", hue="tool", hue_order = tools, palette=palette, linewidth = 2.0, legend=False)
+    # Put the legend out of the figure
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    ax1.set_ylabel("Aligned (%)")
+    plt.ylim(97, 100)
+    # ax1.set_yticks([i for i in range(1000,9999,1000)] + [i for i in range(10000,100001,10000)]) #, ylim=(0, 5200))
+    plt.tight_layout()
+    plt.savefig(os.path.join(outfolder, "percent_aligned.png"))
+    plt.clf()
+
 def main(args):
     sns.set_style("whitegrid")
     palette = {
     'minimap2': 'tab:blue',
-    'strobealign': 'tab:green',
+    'strobealign_v0.17.0_mcs_off': 'tab:green',
+    'strobealign_v0.17.0_mcs_always': 'black',
     'bwa_mem': 'tab:orange',
     'accelalign': 'gold',
     'bowtie2' : 'tab:purple',
@@ -189,17 +219,21 @@ def main(args):
     'snap' : 'pink',    
     'bwa_mem2' : 'black',
     }
-    tools =["minimap2", "bwa_mem", 'accelalign', "bowtie2", "snap", "bwa_mem2", "strobealign"] # "urmap", remove from experiemtns because we get an error in multithreading mode - therefore not fair against urmap to compare runtime with only one core 
+    # tools =["minimap2", "bwa_mem", 'accelalign', "bowtie2", "snap", "bwa_mem2", "strobealign_"] # "urmap", remove from experiemtns because we get an error in multithreading mode - therefore not fair against urmap to compare runtime with only one core 
+    # tools = ["minimap2", "bwa_mem", 'accelalign', "bowtie2", "snap", "bwa_mem2", "strobealign_v0140", "strobealign_mcs"]
+    tools=["minimap2", "bwa_mem", "strobealign_v0.17.0_mcs_off", "strobealign_v0.17.0_mcs_always"]
 
     plot_sv_calling_results(args.sv_csv, args.outfolder, palette, tools, args.type)
     # plot_sv_calling_results2(args.sv_csv, args.outfolder, palette, tools, args.type)
     plot_runtime(args.runtime_mem_csv, args.outfolder, palette, tools)
     # plot_memory_usage(args.runtime_mem_csv, args.outfolder, palette, tools)
+    plot_percent_aligned(args.aligned_csv, args.outfolder, palette, tools)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calc identity", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--sv_csv', type=str, default= "", help='results file')
+    parser.add_argument('--aligned_csv', type=str, default="", help='Alignment results file')
     parser.add_argument('--runtime_mem_csv', type=str, default= "", help='results file')
     parser.add_argument('--type', type=str, default= "sim", help='bio or sim')
     parser.add_argument('outfolder', type=str,  help='outfolder to plots.')

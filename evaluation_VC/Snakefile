@@ -8,6 +8,7 @@ shell.prefix("set -o pipefail; ")
 configfile: "experiments.json"
 
 COMMIT_TO_HASH_MAP = {c["key"]: c["hash"] for c in config["COMMITS"]}
+COMMIT_TO_ARGS_MAP = {c["key"]: c["args"] for c in config["COMMITS"]}
 SCRATCH = "/cfs/klemming/scratch/i/itolstog"
 
 # wildcard_constraints:
@@ -369,16 +370,18 @@ rule strobealign:
     input:  ref = config["HG38"],
             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz",
-            binary = config["ROOT_OUT"] + "/bin/strobealign-{version}" 
+            binary = config["ROOT_OUT"] + "/bin/strobealign-{version}"
             # index = rules.minimap2_index.output.mm_index
+    params:
+        args = COMMIT_TO_HASH_MAP[wildcards.version]
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/strobealign_{version}/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_{version}/{dataset}.sam"
     run: 
 
         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
-            shell("/usr/bin/time -v  {input.binary} -t 32 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
+            shell("/usr/bin/time -v  {input.binary} -t 32 -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} {params.args} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
-            shell("/usr/bin/time -v  {input.binary} -t 32 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
+            shell("/usr/bin/time -v  {input.binary} -t 32 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} {params.args} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 
 rule accelalign_index:
@@ -648,7 +651,7 @@ rule get_stats:
 # tool=["minimap2", "bwa_mem", "strobealign_v071", 'accelalign', "bowtie2", "snap", "urmap", "bwa_mem2", "strobealign_v080_cmake", "strobealign_v090_cmake", "strobealign_v0120_cmake", "strobealign_wfa2", "strobealign_b5305a0", "strobealign_ksw2_cmake", "strobealign_mcs_022a721", "strobealign_116d124"])
 
 rule summary_variant_call_stats:
-    input: call_stats_files =  expand(config["ROOT_OUT"] + "/results/{tool}/{dataset}/results.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_mcs", "strobealign_0.14.0", "strobealign_mcsr"])
+    input: call_stats_files =  expand(config["ROOT_OUT"] + "/results/{tool}/{dataset}/results.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_v0.17.0_mcs_off", "strobealign_v0.17.0_mcs_always"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result"
     run:
         # summary_file = open(out, "w")
@@ -680,7 +683,7 @@ rule align_stats:
  
 
 rule summary_alignment_stats:
-    input: overlap_files = expand(config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result",  dataset = ["SIM150", "SIM250", "BIO150", "BIO250"], tool=["minimap2", "bwa_mem", "strobealign_0.14.0", "strobealign_mcs", "strobealign_mcsr"])
+    input: overlap_files = expand(config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result",  dataset = ["SIM150", "SIM250", "BIO150", "BIO250"], tool=["minimap2", "bwa_mem", "strobealign_v0.17.0_mcs_off", "strobealign_v0.17.0_mcs_always"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
     run:
         shell('echo "tool,dataset,read_length,aligned" > {output.out}')
@@ -694,7 +697,7 @@ rule summary_alignment_stats:
 
 
 rule summary_time_and_mem:
-    input: time_and_mem_files =  expand(config["ROOT_OUT"] + "/time_and_mem_PE/{tool}/{dataset}/aligning_time_and_mem.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_0.14.0", "strobealign_mcs", "strobealign_mcsr"])
+    input: time_and_mem_files =  expand(config["ROOT_OUT"] + "/time_and_mem_PE/{tool}/{dataset}/aligning_time_and_mem.txt",  dataset = ["BIO150", "BIO250", "SIM150", "SIM250"], tool=["minimap2", "bwa_mem", "strobealign_v0.17.0_mcs_off", "strobealign_v0.17.0_mcs_always"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result"
     run:
         # summary_file = open(out, "w")
