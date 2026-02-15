@@ -9,6 +9,7 @@ configfile: "experiments.json"
 
 COMMIT_TO_HASH_MAP = {c["key"]: c["hash"] for c in config["COMMITS"]}
 COMMIT_TO_ARGS_MAP = {c["key"]: c["args"] for c in config["COMMITS"]}
+HG38 = config["DATA"] + "/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 
 # wildcard_constraints:
 #     nr_reads="[\d]+",
@@ -42,7 +43,7 @@ rule all:
 
 
 rule mason_simulate_variants:
-    input:  ref = config["HG38"]
+    input:  ref = HG38
     output: sim_vcf =  config["ROOT_OUT"] + "/hg38_sim_variations.vcf",
             true_vcf_SNV = config["ROOT_OUT"] + "/vcf/SIM3.true.variants.SNV.vcf.gz",
             true_vcf_INDEL = config["ROOT_OUT"] + "/vcf/SIM3.true.variants.INDEL.vcf.gz"
@@ -68,7 +69,7 @@ rule mason_simulate_variants:
 
 
 rule mason_simulate_reads:
-    input:  ref = config["HG38"],
+    input:  ref = HG38,
              sim_vcf = rules.mason_simulate_variants.output.sim_vcf
     output: 
             #sim_fq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
@@ -85,12 +86,10 @@ rule mason_simulate_reads:
     run:
         if wildcards.dataset == "SIM250": # to not give abort trap in simulator due to too low fragment size
             # simulate roughly 30x coverage 3000000000*30/(2*250) =  180000000
-            shell("export TMPDIR={resources.tmpdir}")
             shell("mason_simulator --num-threads {threads} -ir {input.ref} -n 180000000 -iv {input.sim_vcf} --illumina-read-length 250 -o {params.sim_fq_L} -or {params.sim_fq_R} -oa {output.sim_sam} --fragment-mean-size 700")
             shell("pigz {params.sim_fq_L}")
             shell("pigz {params.sim_fq_R}")
         else:
-            shell("export TMPDIR={resources.tmpdir}")
             # simulate roughly 30x coverage 3000000000*30/(2*150) =  300000000
             shell("mason_simulator --num-threads {threads} -ir {input.ref} -n 300000000 -iv {input.sim_vcf} --illumina-read-length 150 -o {params.sim_fq_L} -or {params.sim_fq_R} -oa {output.sim_sam}")
             shell("pigz {params.sim_fq_L}")
@@ -98,8 +97,8 @@ rule mason_simulate_reads:
 
 
 rule minimap2_index:
-    input: ref = config["HG38"]
-    output: mm_index =  config["HG38"] + ".mmi",
+    input: ref = HG38
+    output: mm_index =  HG38 + ".mmi",
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/minimap2/indexing_time_and_mem.txt",
     run:
         shell("/usr/bin/time -v  minimap2 -t 1 -k21 -w11 -d {output.mm_index} {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
@@ -107,7 +106,7 @@ rule minimap2_index:
 rule minimap2_align:
     input: fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
-            # ref = config["HG38"],
+            # ref = HG38,
             index = rules.minimap2_index.output.mm_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/minimap2/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/minimap2/{dataset}.sam"
@@ -125,8 +124,8 @@ rule minimap2_align:
         #shell("mv {tmp_sam} {output.sam}")
 
 rule bwa_mem_index:
-    input: ref = config["HG38"]
-    output: bwa_index =  config["HG38"] + ".bwt",
+    input: ref = HG38
+    output: bwa_index =  HG38 + ".bwt",
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem/indexing_time_and_mem.txt",
     run:
         shell("/usr/bin/time -v  bwa index {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
@@ -134,8 +133,8 @@ rule bwa_mem_index:
 rule bwa_mem_align:
     input: fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
-            index = config["HG38"] + ".bwt",
-            ref = config["HG38"]
+            index = HG38 + ".bwt",
+            ref = HG38
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/bwa_mem/{dataset}.sam"
     threads: 16
@@ -148,24 +147,23 @@ rule bwa_mem_align:
         #tmp_sam = "$SCRATCH/$SLURM_JOB_ID/aligned.sam"
         #tmp_fq_L = "$SCRATCH/$SLURM_JOB_ID/reads_L.fq"
         #tmp_fq_R = "$SCRATCH/$SLURM_JOB_ID/reads_R.fq"
-        shell("export TMPDIR={resources.tmpdir}")
         shell("cat {input} > /dev/null; /usr/bin/time -v  bwa mem -o {output.sam} -t {threads} {input.ref} {input.fastq_L} {input.fastq_R} 2>&1 | tee {output.time_and_mem} ")
         #shell("mv {tmp_time_and_mem} {output.time_and_mem}")
         #shell("mv {tmp_sam} {output.sam}")
 
 rule bwa_mem2_index:
-    input: ref = config["HG38"]
-    output: bwa_mem2_index =  config["HG38"] + ".bwa_mem2.ann", # just one of the files as marker for completion
+    input: ref = HG38
+    output: bwa_mem2_index =  HG38 + ".bwa_mem2.ann", # just one of the files as marker for completion
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem2/indexing_time_and_mem.txt",
     run:
-        idxbase = config["HG38"] + ".bwa_mem2"
+        idxbase = HG38 + ".bwa_mem2"
         shell("/usr/bin/time -v  bwa-mem2 index -p {idxbase} {input.ref}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule bwa_mem2_align:
     input: fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
-            index = config["HG38"] + ".bwa_mem2.ann",
-            ref = config["HG38"]
+            index = HG38 + ".bwa_mem2.ann",
+            ref = HG38
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bwa_mem2/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/bwa_mem2/{dataset}.sam"
     run:
@@ -177,13 +175,13 @@ rule bwa_mem2_align:
         tmp_sam = "$SCRATCH/$SLURM_JOB_ID/aligned.sam"
         tmp_fq_L = "$SCRATCH/$SLURM_JOB_ID/reads_L.fq"
         tmp_fq_R = "$SCRATCH/$SLURM_JOB_ID/reads_R.fq"
-        idxbase = config["HG38"] + ".bwa_mem2"
+        idxbase = HG38 + ".bwa_mem2"
         shell("/usr/bin/time -v  bwa-mem2 mem -o {tmp_sam} -t 32 {idxbase} {tmp_fq_L} {tmp_fq_R} 2>&1 | tee {tmp_time_and_mem} ")
         shell("mv {tmp_time_and_mem} {output.time_and_mem}")
         shell("mv {tmp_sam} {output.sam}")
 
 # rule strobealign_v071:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -209,7 +207,7 @@ rule bwa_mem2_align:
 
 
 # rule strobealign_wfa2:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -224,7 +222,7 @@ rule bwa_mem2_align:
         
 
 # rule strobealign_b5305a0:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -239,7 +237,7 @@ rule bwa_mem2_align:
 
 
 # rule strobealign_v080_cmake:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -254,7 +252,7 @@ rule bwa_mem2_align:
         
 
 # rule strobealign_v090_cmake:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -269,7 +267,7 @@ rule bwa_mem2_align:
 
 
 # rule strobealign_v0120_cmake:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -283,7 +281,7 @@ rule bwa_mem2_align:
 #             shell("/usr/bin/time -v  strobealign-v0.12.0-cmake -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 # rule strobealign_ksw2_cmake:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -297,7 +295,7 @@ rule bwa_mem2_align:
 #             shell("/usr/bin/time -v  strobealign-ksw2 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 # rule strobealign_116d124:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -311,7 +309,7 @@ rule bwa_mem2_align:
 #             shell("/usr/bin/time -v  strobealign-116d124 -t 16 -r 250 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} 2> {output.time_and_mem}") #  2>&1 | tee {tmp_time_and_mem}
 
 # rule strobealign_v0120_opt:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -326,7 +324,7 @@ rule bwa_mem2_align:
 
 
 # rule strobealign_v0140:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -342,7 +340,7 @@ rule bwa_mem2_align:
 
 
 # rule strobealign_mcs_022a721:
-#     input:  ref = config["HG38"],
+#     input:  ref = HG38,
 #             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
 #             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz", 
 #             # index = rules.minimap2_index.output.mm_index
@@ -375,8 +373,59 @@ rule compile_strobealign:
         """
 
 
+rule download_reference:
+    output: HG38
+    shell:
+        """
+        curl -s ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz | gunzip > {output}
+        """
+
+
+rule download_bio150:
+    output:
+        fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+        fastq_R = config["DATA"] + "/{dataset}/reads_R2.fastq.gz"
+    wildcard_constraints:
+        dataset="BIO150"
+    params:
+        index_url = "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data_indexes/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015_updated.HG004"
+    shell:
+        """
+        mkdir -p $(dirname {output.fastq_L})
+        curl -s {params.index_url} > {output.fastq_L}.index.tmp
+        > {output.fastq_L}
+        > {output.fastq_R}
+        tail -n +2 {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+            curl -s "$r1_url" >> {output.fastq_L}
+            curl -s "$r2_url" >> {output.fastq_R}
+        done
+        rm {output.fastq_L}.index.tmp
+        """
+
+rule download_bio250:
+    output:
+        fastq_L = config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
+        fastq_R = config["DATA"] + "/{dataset}/reads_R2.fastq.gz"
+    wildcard_constraints:
+        dataset="BIO250"
+    params:
+        index_url = "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data_indexes/AshkenazimTrio/sequence.index.AJtrio_Illumina_2x250bps_06012016_updated.HG004"
+    shell:
+        """
+        mkdir -p $(dirname {output.fastq_L})
+        curl -s {params.index_url} > {output.fastq_L}.index.tmp
+        > {output.fastq_L}
+        > {output.fastq_R}
+        tail -n +2 {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+            curl -s "$r1_url" >> {output.fastq_L}
+            curl -s "$r2_url" >> {output.fastq_R}
+        done
+        rm {output.fastq_L}.index.tmp
+        """
+
+
 rule strobealign:
-    input:  ref = config["HG38"],
+    input:  ref = HG38,
             fastq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq.gz",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq.gz",
             binary = config["ROOT_OUT"] + "/bin/strobealign-{version}"
@@ -387,7 +436,6 @@ rule strobealign:
             sam =  config["ROOT_OUT"] + "/alignments_PE/strobealign_{version}/{dataset}.sam"
     threads: 32
     run: 
-        #shell("export TMPDIR={resources.tmpdir}")
         if wildcards.dataset == "BIO150" or wildcards.dataset == "SIM150":
             shell("cat {input} > /dev/null; /usr/bin/time -v  {input.binary} -t {threads} -r 150 -o {output.sam} {input.ref} {input.fastq_L} {input.fastq_R} {params.args} 2> {output.time_and_mem}") # 2>&1 | tee {tmp_time_and_mem}
         elif  wildcards.dataset == "BIO250" or wildcards.dataset == "SIM250":
@@ -395,8 +443,8 @@ rule strobealign:
 
 
 rule accelalign_index:
-    input: ref = config["HG38"]
-    output: accelalign_index =  config["HG38"] + ".hash",
+    input: ref = HG38
+    output: accelalign_index =  HG38 + ".hash",
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/accelalign/indexing_time_and_mem.txt"
     run:
         shell("/usr/bin/time -v  accindex -t 16 {input.ref} 2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
@@ -409,7 +457,7 @@ rule accelalign_align:
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/accelalign/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/accelalign/{dataset}.sam"
     run:
-        ref = config["HG38"]
+        ref = HG38
         shell("echo Copied reads to: $SLURM_JOB_ID")
         tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
         tmp_sam = "/scratch/$SLURM_JOB_ID/aligned.sam"
@@ -420,23 +468,23 @@ rule accelalign_align:
         shell("mv {tmp_sam} {output.sam}")
 
 rule bowtie2_index:
-    input: ref = config["HG38"]
-    output: index =  config["HG38"] + "-bt2.1.bt2",
+    input: ref = HG38
+    output: index =  HG38 + "-bt2.1.bt2",
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bowtie2/indexing_time_and_mem.txt"
     run:
-        index =  config["HG38"] + "-bt2"
+        index =  HG38 + "-bt2"
         shell("/usr/bin/time -v  bowtie2-build --threads 1 {input.ref} {index}  2>&1 | tee {output.time_and_mem}") #  2> {output.time_and_mem}
 
 rule bowtie2_align:
     input:  fastq_L =   config["DATA"] + "/{dataset}/reads_R1.fastq",
             fastq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq", 
-            bt2_index =  config["HG38"] + "-bt2.1.bt2",
+            bt2_index =  HG38 + "-bt2.1.bt2",
             # index = rules.minimap2_index.output.mm_index
     output: time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/bowtie2/{dataset}/aligning_time_and_mem.txt",
             sam =  config["ROOT_OUT"] + "/alignments_PE/bowtie2/{dataset}.sam"
     run:
-        ref = config["HG38"]
-        bt2_index = config["HG38"] + "-bt2"
+        ref = HG38
+        bt2_index = HG38 + "-bt2"
         shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
         shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
         shell("echo Copied reads to: $SLURM_JOB_ID")
@@ -450,8 +498,8 @@ rule bowtie2_align:
 
 
 rule snap_index:
-    input: ref = config["HG38"]
-    output: snp_index =  directory(config["HG38"] + "_snap_index/GenomeIndexHash"),
+    input: ref = HG38
+    output: snp_index =  directory(HG38 + "_snap_index/GenomeIndexHash"),
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/snap/indexing_time_and_mem.txt",
     run:
         # snap
@@ -467,11 +515,11 @@ rule snap_align:
         shell("cp {0} /scratch/$SLURM_JOB_ID/reads_L.fq".format(input.fastq_L))
         shell("cp {0} /scratch/$SLURM_JOB_ID/reads_R.fq".format(input.fastq_R))
         shell("echo Copied reads to: $SLURM_JOB_ID")
-        ref = config["HG38"]
+        ref = HG38
         tmp_index = "/scratch/$SLURM_JOB_ID/snap_index/"
         shell("mkdir {tmp_index}")
         shell("/usr/bin/time -v  snap-aligner index {ref}  {tmp_index}") 
-        # shell("cp -r {0} /scratch/$SLURM_JOB_ID/snap_index".format(config["HG38"] + "_snap_index"))
+        # shell("cp -r {0} /scratch/$SLURM_JOB_ID/snap_index".format(HG38 + "_snap_index"))
         # shell("chmod +x /scratch/$SLURM_JOB_ID/snap_index")
         shell("echo Copied index to: $SLURM_JOB_ID")
         tmp_time_and_mem = "/scratch/$SLURM_JOB_ID/aligning_time_and_mem.txt"
@@ -480,7 +528,7 @@ rule snap_align:
         tmp_fq_R = "/scratch/$SLURM_JOB_ID/reads_R.fq"
         # snap-aligner paired index-dir read1.fq read2.fq -o output.sam
         # tmp_index = "/scratch/$SLURM_JOB_ID/snap_index/"
-        # tmp_index = config["HG38"] + "_snap_index"
+        # tmp_index = HG38 + "_snap_index"
         shell("/usr/bin/time -v  snap-aligner paired {tmp_index} {tmp_fq_L} {tmp_fq_R} -o {tmp_sam} -t 16  2>&1 | tee {tmp_time_and_mem}  ")
         shell("mv {tmp_time_and_mem} {output.time_and_mem}")
         shell("mv {tmp_sam} {output.sam}")
@@ -489,8 +537,8 @@ rule snap_align:
 
 # URMAP removed from runtime analysis since we can only run it with 1 thread.
 rule urmap_index:
-    input: ref = config["HG38"]
-    output: ufi_index =  config["HG38"] + ".ufi",
+    input: ref = HG38
+    output: ufi_index =  HG38 + ".ufi",
             time_and_mem =  config["ROOT_OUT"] + "/time_and_mem_PE/urmap/indexing_time_and_mem.txt",
     run:
         # urmap -make_ufi hg38.fa -veryfast -output hg38.ufi
@@ -526,7 +574,7 @@ rule make_sorted_bam:
     output: sorted_bam =  config["ROOT_OUT"] + "/alignments_PE/{tool}/{dataset}.bam"
     run:
         # sam to sorted indexed bam
-        shell("export TMPDIR={resources.tmpdir}")
+        # shell("export TMPDIR={resources.tmpdir}")
         shell('samtools view -@ 16 -u {input.sam} | samtools sort -@ 16 -o {output.sorted_bam}')
         shell('samtools index {output.sorted_bam}')
         shell('rm {input.sam}')
@@ -534,7 +582,7 @@ rule make_sorted_bam:
 
 rule bcftools_mpileup:
     input: bam = rules.make_sorted_bam.output.sorted_bam,
-            ref = config["HG38"]
+            ref = HG38
     output: vcf_gz = config["ROOT_OUT"] + "/vcf/{tool}/{dataset}.vcf.gz"
     run:
             mkdir_p(config["ROOT_OUT"] + "/vcf/{0}/".format(wildcards.tool))
@@ -543,7 +591,7 @@ rule bcftools_mpileup:
 
 rule bcftools_call:
     input: vcf_gz = rules.bcftools_mpileup.output.vcf_gz,
-            ref = config["HG38"]
+            ref = HG38
     output: vcf_called = config["ROOT_OUT"] + "/vcf/{tool}/{dataset}.variants.vcf"
     run:
         # call variants
@@ -553,7 +601,7 @@ rule bcftools_call:
 
 rule bcftools_norm:
     input: vcf_called = rules.bcftools_call.output.vcf_called,
-            ref = config["HG38"]
+            ref = HG38
     output: vcf_SNV = config["ROOT_OUT"] + "/vcf/{tool}/{dataset}.variants.SNV.vcf",
             vcf_INDEL = config["ROOT_OUT"] + "/vcf/{tool}/{dataset}.variants.INDEL.vcf"
     run:

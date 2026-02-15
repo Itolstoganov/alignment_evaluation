@@ -1,266 +1,190 @@
 {
 
-    "__default__" : 
+    "__default__" :
     {
-        "account" : "naiss2024-5-55",
+        "account" : "X",
+        "partition": "Y",
         "cpus-per-task" : "4",
         "mem" : "12GB",
-	"partition": "shared",
         "Nodes" : 1,
         "runtime" : "01:00:00",
-        "jobname" : "pipeline",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "jobname" : "pipeline"
     },
 
-    "mason_simulate_reads" : 
+    "minimap2_index" :
     {
-        "account" : "naiss2024-5-55",
-        "cpus-per-task" : "5",
-        "mem" : "128GB",
-        "Nodes" : 1,
-        "runtime" : "07:00:00",
-        "jobname" : "simulate",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
-    },
-
-
-    "minimap2_index" : 
-    {
-        "account" : "naiss2024-5-55",
         "jobname" : "mm2_index",
-	"partition" : "main",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "252GB",
-        "runtime" : "04:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "04:00:00"
     },
 
 
-    "minimap2_align": 
+    "minimap2_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "mm2_aln",
-	"partition" : "main",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "252GB",
-        "runtime" : "1-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "1-00:00:00"
     },
 
-    "bwa_mem_index" : 
+    "bwa_mem_index" :
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bwa_index",
-	"partition" : "main",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "03:30:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "03:30:00"
     },
 
-    "bwa_mem2_index" : 
+    "bwa_mem2_index" :
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bwamem2_index",
         "cpus-per-task" : "32",
         "Nodes" : 1,
         "mem" : "252GB",
-        "runtime" : "03:30:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "runtime" : "03:30:00"
     },
 
-    "bwa_mem_align": 
+    "bwa_mem_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bwa_aln",
         "cpus-per-task" : "32",
 	"partition": "main",
         "Nodes" : 1,
-        "mem" : "252GB",
-        "runtime" : "1-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "1-00:00:00"
     },
 
-    "bwa_mem2_align": 
+    "bwa_mem2_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bwamem2_aln",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "2-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "64GB",
+        "runtime" : "2-00:00:00"
     },
 
-    "strobealign": 
+    "strobealign":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "strobealign_vc",
-	"partition" : "main",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "252GB",
-        "runtime" : "1-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "1-00:00:00"
     },
 
-    "bowtie2_index" : 
+    "bowtie2_index" :
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bowtie2_index",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "03:30:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "03:30:00"
     },
 
-    "bowtie2_align": 
+    "bowtie2_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "bowtie2_align",
         "cpus-per-task" : "32",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "2-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "2-00:00:00"
     },
-    
-        "urmap_index" : 
+
+    "urmap_index" :
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "urmap_index",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "07:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "07:00:00"
     },
 
 
-    "urmap_align": 
+    "urmap_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "urmap_aln",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "2-00:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "2-00:00:00"
     },
 
-    "snap_index" : 
+    "snap_index" :
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "snap_index",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "01:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "01:00:00"
     },
 
 
-    "snap_align": 
+    "snap_align":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "snap_aln",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "07:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "48GB",
+        "runtime" : "07:00:00"
     },
 
-    "bcftools_mpileup": 
+    "bcftools_mpileup":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "mpileup",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "15:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "15:00:00"
     },
 
-    "bcftools_call": 
+    "bcftools_call":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "call",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "10:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "10:00:00"
     },
 
 
-    "bcftools_norm": 
+    "bcftools_norm":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "norm",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "5:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "5:00:00"
     },
 
-     "bcftools_intersect": 
+     "bcftools_intersect":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "isec",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "07:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "07:00:00"
     },
 
-    "make_sorted_bam": 
+    "make_sorted_bam":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "sort_bam",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "10:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "10:00:00"
     },
 
-    "mason_simulate_reads": 
+    "mason_simulate_reads":
     {
-        "account" : "naiss2024-5-55",
         "jobname" : "sim_reads",
         "cpus-per-task" : "20",
         "Nodes" : 1,
-        "mem" : "128GB",
-        "runtime" : "10:00:00",
-        "mail" : "ivan.tolstoganov@math.su.se",
-        "mail_type" : "FAIL"
+        "mem" : "96GB",
+        "runtime" : "10:00:00"
     }
 
 }
