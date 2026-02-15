@@ -423,6 +423,13 @@ rule download_bio250:
         rm {output.fastq_L}.index.tmp
         """
 
+rule download_truth_vcf:
+    output: config["DATA"] + "/HG004_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
+    shell:
+        """
+        curl -s https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG004_NA24143_mother/NISTv4.2.1/GRCh38/HG004_GRCh38_1_22_v4.2.1_benchmark.vcf.gz > {output}
+        """
+
 
 rule strobealign:
     input:  ref = HG38,
