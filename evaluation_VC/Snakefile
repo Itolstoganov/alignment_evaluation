@@ -8,8 +8,9 @@ shell.prefix("set -o pipefail; ")
 configfile: "experiments.json"
 
 COMMIT_TO_HASH_MAP = {c["key"]: c["hash"] for c in config["COMMITS"]}
+COMMIT_TO_DIR_MAP = {c["key"]: c["dir"] for c in config["COMMITS"]}
 COMMIT_TO_ARGS_MAP = {c["key"]: c["args"] for c in config["COMMITS"]}
-HG38 = config["DATA"] + "/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
+HG38 = config["DATA"] + "/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa"
 
 # wildcard_constraints:
 #     nr_reads="[\d]+",
@@ -357,14 +358,15 @@ rule bwa_mem2_align:
 rule compile_strobealign:
     output: config["ROOT_OUT"] + "/bin/strobealign-{key}"
     params:
-        commit=lambda wildcards: COMMIT_TO_HASH_MAP[wildcards.key]
+        commit=lambda wildcards: COMMIT_TO_HASH_MAP[wildcards.key],
+	dir=lambda wildcards: COMMIT_TO_DIR_MAP[wildcards.key]
     threads: 4
     shell:
         """
         wget https://github.com/ksahlin/strobealign/archive/{params.commit}.zip
         unzip {params.commit}.zip
         rm {params.commit}.zip
-        cd strobealign-{params.commit}
+        cd strobealign-{params.dir}
         cmake -B build -DCMAKE_C_FLAGS="-march=native" -DCMAKE_CXX_FLAGS="-march=native"
         make -j {threads} -C build strobealign
         mv build/strobealign {output}
@@ -392,7 +394,7 @@ rule download_bio150:
     shell:
         """
         mkdir -p $(dirname {output.fastq_L})
-        curl -s {params.index_url} > {output.fastq_L}.index.tmp
+        curl -s {params.index_url} | grep "140818_D00360_0047_BHA66FADXX" > {output.fastq_L}.index.tmp
         > {output.fastq_L}
         > {output.fastq_R}
         tail -n +2 {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
