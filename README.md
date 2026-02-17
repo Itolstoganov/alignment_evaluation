@@ -1,12 +1,10 @@
-To run the variant calling benchmark
+To run the variant calling benchmark:
 
-<ol>
-    <li>Install conda environment `evaluation_VC/environment.yml`</li>
-    <li>Fill the `evaluation_VC/experiments.json`</li>
-        <li>`ROOT_OUT` - output directory</li>
-        <li>`ROOT_IN` - repository directory</li>
-        <li>`DATA` - directory with input reads (initially empty, datasets are downloaded/simulated by the benchmark pipeline)</li>
-        <li>`COMMITS` - strobealign versions used in the benchmark</li>
-    <li>
-    <li> Run `snakemake -s evaluation_VC/Snakefile --configfile evaluation_VC/experiments.json`
-</ol>
+1. Install conda environment `evaluation_VC/environment.yml`
+2. Fill the `evaluation_VC/experiments.json`
+    1. `ROOT_OUT` - output directory
+    2. `ROOT_IN` - repository directory
+    3. `DATA` - directory with input reads and variants (initially empty, datasets are downloaded/simulated by the benchmark pipeline)
+    4. `COMMITS` - strobealign versions used in the benchmark
+3. Run `snakemake -s evaluation_VC/Snakefile --configfile evaluation_VC/experiments.json`
+4. Output results are located in `ROOT_OUT/evaluation_SV`
