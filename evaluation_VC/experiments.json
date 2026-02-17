@@ -2,6 +2,6 @@
     "ROOT_OUT" : "out",
     "ROOT_IN" : "alignment_evaluation",
     "DATA" : "data",
-    "COMMITS" : [{"key": "v0.17.0_mcs_off", "hash": "v0.17.0", "name": "strobealign 0.17.0 mcs=off", "args": "--mcs=off"}, 
-                 {"key": "v0.17.0_mcs_always", "hash": "v0.17.0", "name": "strobealign 0.17.0 mcs=always", "args": "--mcs=always"}]
+    "COMMITS" : [{"key": "v0.17.0_mcs_off", "hash": "v0.17.0", "dir": "0.17.0", "name": "strobealign 0.17.0 mcs=off", "args": "--mcs=off"}, 
+                 {"key": "v0.17.0_mcs_always", "hash": "v0.17.0", "dir": "0.17.0", "name": "strobealign 0.17.0 mcs=always", "args": "--mcs=always"}]
 }
