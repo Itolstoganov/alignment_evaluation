@@ -71,7 +71,7 @@ rule mason_simulate_variants:
 
 rule mason_simulate_reads:
     input:  ref = HG38,
-             sim_vcf = rules.mason_simulate_variants.output.sim_vcf
+            sim_vcf = rules.mason_simulate_variants.output.sim_vcf
     output: 
             #sim_fq_L =  config["DATA"] + "/{dataset}/reads_R1.fastq",
             #sim_fq_R =  config["DATA"] + "/{dataset}/reads_R2.fastq",
@@ -87,11 +87,13 @@ rule mason_simulate_reads:
     run:
         if wildcards.dataset == "SIM250": # to not give abort trap in simulator due to too low fragment size
             # simulate roughly 30x coverage 3000000000*30/(2*250) =  180000000
+            #shell("export TMPDIR={resources.tmpdir}")
             shell("mason_simulator --num-threads {threads} -ir {input.ref} -n 180000000 -iv {input.sim_vcf} --illumina-read-length 250 -o {params.sim_fq_L} -or {params.sim_fq_R} -oa {output.sim_sam} --fragment-mean-size 700")
             shell("pigz {params.sim_fq_L}")
             shell("pigz {params.sim_fq_R}")
         else:
             # simulate roughly 30x coverage 3000000000*30/(2*150) =  300000000
+            #shell("export TMPDIR={resources.tmpdir}")
             shell("mason_simulator --num-threads {threads} -ir {input.ref} -n 300000000 -iv {input.sim_vcf} --illumina-read-length 150 -o {params.sim_fq_L} -or {params.sim_fq_R} -oa {output.sim_sam}")
             shell("pigz {params.sim_fq_L}")
             shell("pigz {params.sim_fq_R}")
@@ -397,11 +399,13 @@ rule download_bio150:
         curl -s {params.index_url} | grep "140818_D00360_0047_BHA66FADXX" > {output.fastq_L}.index.tmp
         > {output.fastq_L}
         > {output.fastq_R}
-        tail -n +2 {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+        cat {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+	    #echo "$r1_url"
             curl -s "$r1_url" >> {output.fastq_L}
+	    #echo "$r2_url"
             curl -s "$r2_url" >> {output.fastq_R}
         done
-        rm {output.fastq_L}.index.tmp
+        # rm {output.fastq_L}.index.tmp
         """
 
 rule download_bio250:
@@ -415,14 +419,16 @@ rule download_bio250:
     shell:
         """
         mkdir -p $(dirname {output.fastq_L})
-        curl -s {params.index_url} > {output.fastq_L}.index.tmp
+        curl -s {params.index_url} | grep "S1" > {output.fastq_L}.index.tmp
         > {output.fastq_L}
         > {output.fastq_R}
-        tail -n +2 {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+        cat {output.fastq_L}.index.tmp | while IFS=$'\\t' read -r r1_url r1_md5 r2_url r2_md5 sample; do
+  	    #echo "$r1_url"
             curl -s "$r1_url" >> {output.fastq_L}
+	    #echo "$r2_url"
             curl -s "$r2_url" >> {output.fastq_R}
         done
-        rm {output.fastq_L}.index.tmp
+        # rm {output.fastq_L}.index.tmp
         """
 
 rule download_truth_vcf:
