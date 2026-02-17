@@ -38,9 +38,27 @@ def mkdir_p(path):
             raise
 
 rule all:
-   input:  config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result",
-           config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result",
-           config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
+   input:  config["ROOT_OUT"] + "/evaluation_SV/plots/sv_snv.pdf",
+           config["ROOT_OUT"] + "/evaluation_SV/plots/sv_indel.pdf",
+           config["ROOT_OUT"] + "/evaluation_SV/plots/runtime.pdf",
+           config["ROOT_OUT"] + "/evaluation_SV/plots/percent_aligned.png"
+
+rule plot:
+    input:  sv_csv = config["ROOT_OUT"] + "/evaluation_SV/variant_calls.result",
+            runtime_mem_csv = config["ROOT_OUT"] + "/evaluation_SV/time_and_mem.result",
+            aligned_csv = config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
+    output: config["ROOT_OUT"] + "/evaluation_SV/plots/sv_snv.pdf",
+            config["ROOT_OUT"] + "/evaluation_SV/plots/sv_indel.pdf",
+            config["ROOT_OUT"] + "/evaluation_SV/plots/runtime.pdf",
+            config["ROOT_OUT"] + "/evaluation_SV/plots/percent_aligned.png"
+    params:
+            outfolder = config["ROOT_OUT"] + "/evaluation_SV/plots",
+            script_dir = config["ROOT_IN"] + "/evaluation_VC"
+    shell:
+        """
+        mkdir -p {params.outfolder}
+        python {params.script_dir}/plots.py --sv_csv {input.sv_csv} --runtime_mem_csv {input.runtime_mem_csv} --aligned_csv {input.aligned_csv} {params.outfolder}
+        """
 
 
 rule mason_simulate_variants:
@@ -758,7 +776,7 @@ rule summary_alignment_stats:
     input: overlap_files = expand(config["ROOT_OUT"] + "/evaluation_PE/{tool}/{dataset}.result",  dataset = ["SIM150", "SIM250", "BIO150", "BIO250"], tool=["minimap2", "bwa_mem", "strobealign_v0.17.0_mcs_off", "strobealign_v0.17.0_mcs_always"])
     output: out = config["ROOT_OUT"] + "/evaluation_SV/aligned.result"
     run:
-        shell('echo "tool,dataset,read_length,aligned" > {output.out}')
+        shell('echo "tool,dataset,aligned" > {output.out}')
         for f in input.overlap_files:
             string = f.split("/")
             tool = string[-2]

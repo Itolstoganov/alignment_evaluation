@@ -73,6 +73,7 @@ def plot_sv_calling_results(input_csv, outfolder, palette, tools, exp_type):
     plt.tight_layout()
     plt.savefig(os.path.join(outfolder, "sv_snv.pdf"))
     plt.clf()
+    # print(indels)
 
     f, axes = plt.subplots(1, 3)
     ax1 = sns.lineplot(data=indels, x="dataset", y="recall", hue="tool", hue_order = tools, ax=axes[0], palette=palette, linewidth = 2.0)
@@ -87,14 +88,14 @@ def plot_sv_calling_results(input_csv, outfolder, palette, tools, exp_type):
     ax1.get_legend().remove()
     ax2.get_legend().remove()
     ax3.get_legend().remove()
-    if exp_type == 'bio':
-        ax1.set_ylim(2, 8.5) # for BIO
-        ax2.set_ylim(2, 8.5) # for BIO
-        ax3.set_ylim(2, 8.5) # for BIO
-    else:
-        ax1.set_ylim(2, 55) # for SIM
-        ax2.set_ylim(2, 55) # for SIM
-        ax3.set_ylim(2, 55) # for SIM
+    # if exp_type == 'bio':
+    #     ax1.set_ylim(2, 8.5) # for BIO
+    #     ax2.set_ylim(2, 8.5) # for BIO
+    #     ax3.set_ylim(2, 8.5) # for BIO
+    # else:
+    #     ax1.set_ylim(2, 55) # for SIM
+    #     ax2.set_ylim(2, 55) # for SIM
+    #     ax3.set_ylim(2, 55) # for SIM
     ax1.set_ylabel("Recall (%)")
     ax2.set_ylabel("Precision (%)")
     ax3.set_ylabel("F-score (%)")
@@ -105,7 +106,7 @@ def plot_sv_calling_results(input_csv, outfolder, palette, tools, exp_type):
     plt.savefig(os.path.join(outfolder, "sv_indel.pdf"))
     plt.clf()
 
-    # # Recall
+    # Recall
     # g = sns.relplot(data=indata, x="dataset", y="recall", hue="tool", kind="line", #dashes = dashes, style="type",
     #     col="type", col_order=["SNV", "INDEL"]) # hue="datastructure", style="datastructure",  col_wrap=3, )
     # g.set_axis_labels("Dataset", "Recall")
@@ -191,7 +192,7 @@ def plot_percent_aligned(input_csv, outfolder, palette, tools):
     # pyplot.figure(figsize=(4,16))
     indata = pd.read_csv(input_csv)
     actual_reads = {"SIM150": sim150_reads, "SIM250": sim250_reads, "BIO150": bio150_reads, "BIO250": bio250_reads}
-    print(indata)
+    # print(indata)
 
     indata['aligned_fixed'] = indata.apply(lambda row: row["aligned"] * reads_assumed / actual_reads[row["dataset"]], axis=1)
 
